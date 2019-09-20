@@ -1,10 +1,10 @@
 package id2221.topten;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.HashMap;
+import java.util.*;
 
+import com.sun.corba.se.spi.ior.Writeable;
+import org.apache.commons.io.output.NullWriter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
@@ -27,6 +27,7 @@ import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter;
+import sun.reflect.generics.tree.Tree;
 
 public class TopTen {
     // This helper function parses the stackoverflow into a Map for us.
@@ -46,70 +47,58 @@ public class TopTen {
         return map;
     }
 
-    public static class TopTenMapper extends Mapper<Object, Text, NullWritable, Text> {
+    public static class TopTenMapper extends Mapper<Object, Text, Integer, Text> {
         // Stores a map of user reputation to the record
-        TreeMap<Integer, Text> repToRecordMap = new TreeMap<Integer, Text>();
+        TreeMap<Integer, List<Text>> repToRecordMap = new TreeMap<Integer, List<Text> >();
 
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-            Map<String, String> parsed = TopTen.transformXmlToMap(value.toString());
-            if (parsed == null) {
+            String line = value.toString();
+            Map<String, String> xmlMap = transformXmlToMap(line);
+            if (xmlMap == null) {
                 return;
             }
+            String id = xmlMap.get("Id");
+            int reputation = Integer.parseInt( xmlMap.get("Reputation") );
 
-            String userId = parsed.get("AccountId");
-            String reputation = parsed.get("Reputation");
-            if (userId == null || reputation == null) {
-                return;
+            if( repToRecordMap.containsKey(reputation) ) {
+                repToRecordMap.get(reputation).add(value);
             }
-
-            // Add this record to our map with the reputation as the key
-            repToRecordMap.put(Integer.parseInt(reputation), new Text(value));
-
-            // If we have more than ten records, remove the one with the lowest reputation.
-            if (repToRecordMap.size() > 10) {
-                repToRecordMap.remove(repToRecordMap.firstKey());
+            else {
+                List<Text> temp = new ArrayList<Text>();
+                temp.add(value);
+                repToRecordMap.put(reputation, temp);
             }
         }
 
         protected void cleanup(Context context) throws IOException, InterruptedException {
             // Output our ten records to the reducers with a null key
-            for (Text t : repToRecordMap.values()) {
-                context.write(NullWritable.get(), t);
+            int counter =0;
+            for (Map.Entry<Integer, List<Text>> entry : repToRecordMap.entrySet()) {
+                if (entry.getValue() != null) {
+                    for (Text text : entry.getValue()) {
+                        if(counter >= 10 ) return;
+                        context.write(entry.getKey() , text);
+                        ++counter;
+                    }
+                }
             }
         }
     }
 
-    public static class TopTenReducer extends TableReducer<NullWritable, Text, NullWritable> {
+    public static class TopTenReducer extends TableReducer<Integer, Text, NullWritable> {
         // Stores a map of user reputation to the record
-        private TreeMap<Integer, Text> repToRecordMap = new TreeMap<Integer, Text>();
+        private TreeMap<Integer, List<Text> > repToRecordMap = new TreeMap();
 
-        public void reduce(NullWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            for (Text value : values) {
-                Map<String, String> parsed = TopTen.transformXmlToMap(value.toString());
-                String reputation = parsed.get("Reputation");
+        public void reduce(Integer key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 
-                // Add this record to our map with the reputation as the key
-                repToRecordMap.put(Integer.parseInt(reputation), new Text(value));
 
-                // If we have more than ten records, remove the one with the lowest reputation.
-                if (repToRecordMap.size() > 10) {
-                    repToRecordMap.remove(repToRecordMap.firstKey());
-                }
+            if( repToRecordMap.containsKey(key) ) {
+                repToRecordMap.get(key).add(values);
             }
-
-            for (Text t : repToRecordMap.descendingMap().values()) {
-                Map<String, String> parsed = TopTen.transformXmlToMap(t.toString());
-                String rep = parsed.get("Reputation");
-                String id = parsed.get("AccountId");
-
-                Put insHBase = new Put(rep.getBytes());
-
-                // insert sum value to hbase
-                insHBase.addColumn(Bytes.toBytes("info"), Bytes.toBytes("rep"), Bytes.toBytes(rep));
-                insHBase.addColumn(Bytes.toBytes("info"), Bytes.toBytes("id"), Bytes.toBytes(id));
-
-                // write data to Hbase table
-                context.write(null, insHBase);
+            else {
+                List<Text> temp = new ArrayList<Text>();
+                temp.add(value);
+                repToRecordMap.put(reputation, temp);
             }
         }
     }
@@ -124,7 +113,7 @@ public class TopTen {
 
         TableMapReduceUtil.initTableReducerJob("topten", TopTenReducer.class, job);
 
-        job.setOutputKeyClass(NullWritable.class);
+        job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(Text.class);
 
         job.setNumReduceTasks(1);
