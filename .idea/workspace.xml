@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="766a0731-fa8e-464a-bd06-4082747daedd" name="Default Changelist" comment="" />
+    <list default="true" id="766a0731-fa8e-464a-bd06-4082747daedd" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/id2221/notebooks/.ipynb_checkpoints/spark-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/src/id2221/notebooks/.ipynb_checkpoints/spark-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/id2221/notebooks/spark.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/src/id2221/notebooks/spark.ipynb" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
