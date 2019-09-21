@@ -1,10 +1,7 @@
 package id2221.topten;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.TreeMap;
-import java.util.HashMap;
+import java.util.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -63,7 +60,7 @@ public class TopTen {
             repToRecordMap.put(new Integer(id), new Text(reputation));
         }
 
-        public 
+        public
 
         protected void cleanup(Context context) throws IOException, InterruptedException {
 
@@ -76,6 +73,10 @@ public class TopTen {
         private TreeMap<Integer, Text> repToRecordMap = new TreeMap<Integer, Text>();
 
         public void reduce(NullWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+            List<Text> valList = new ArrayList<>();
+            for (Text value : values) {
+                valList.add(value);
+            }
 	    <FILL IN>
         }
     }
