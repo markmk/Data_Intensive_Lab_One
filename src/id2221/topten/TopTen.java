@@ -1,10 +1,11 @@
 package id2221.topten;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.HashMap;
 
-import com.sun.corba.se.spi.ior.Writeable;
-import org.apache.commons.io.output.NullWriter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
@@ -27,7 +28,6 @@ import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter;
-import sun.reflect.generics.tree.Tree;
 
 public class TopTen {
     // This helper function parses the stackoverflow into a Map for us.
@@ -47,9 +47,9 @@ public class TopTen {
         return map;
     }
 
-    public static class TopTenMapper extends Mapper<Object, Text, Integer, Text> {
+    public static class TopTenMapper extends Mapper<Object, Text, NullWritable, Text> {
         // Stores a map of user reputation to the record
-        TreeMap<Integer, List<Text>> repToRecordMap = new TreeMap<Integer, List<Text> >();
+        TreeMap<Integer, Text> repToRecordMap = new TreeMap<Integer, Text>();
 
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             String line = value.toString();
@@ -58,67 +58,29 @@ public class TopTen {
                 return;
             }
             String id = xmlMap.get("Id");
-            int reputation = Integer.parseInt( xmlMap.get("Reputation") );
+            String reputation = xmlMap.get("Reputation");
 
-            if( repToRecordMap.containsKey(reputation) ) {
-                repToRecordMap.get(reputation).add(value);
-            }
-            else {
-                List<Text> temp = new ArrayList<Text>();
-                temp.add(value);
-                repToRecordMap.put(reputation, temp);
-            }
+            repToRecordMap.put(new Integer(id), new Text(reputation));
         }
 
+        public 
+
         protected void cleanup(Context context) throws IOException, InterruptedException {
-            // Output our ten records to the reducers with a null key
-            int counter =0;
-            for (Map.Entry<Integer, List<Text>> entry : repToRecordMap.entrySet()) {
-                if (entry.getValue() != null) {
-                    for (Text text : entry.getValue()) {
-                        if(counter >= 10 ) return;
-                        context.write(entry.getKey() , text);
-                        ++counter;
-                    }
-                }
-            }
+
+
         }
     }
 
-    public static class TopTenReducer extends TableReducer<Integer, Text, NullWritable> {
+    public static class TopTenReducer extends TableReducer<NullWritable, Text, NullWritable> {
         // Stores a map of user reputation to the record
-        private TreeMap<Integer, List<Text> > repToRecordMap = new TreeMap();
+        private TreeMap<Integer, Text> repToRecordMap = new TreeMap<Integer, Text>();
 
-        public void reduce(Integer key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-
-
-            if( repToRecordMap.containsKey(key) ) {
-                repToRecordMap.get(key).add(values);
-            }
-            else {
-                List<Text> temp = new ArrayList<Text>();
-                temp.add(value);
-                repToRecordMap.put(reputation, temp);
-            }
+        public void reduce(NullWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+	    <FILL IN>
         }
     }
 
     public static void main(String[] args) throws Exception {
-        Configuration conf = HBaseConfiguration.create();
-
-        Job job = Job.getInstance(conf, "TopTen");
-        job.setJarByClass(TopTen.class);
-        job.setMapperClass(TopTenMapper.class);
-        job.setReducerClass(TopTenReducer.class);
-
-        TableMapReduceUtil.initTableReducerJob("topten", TopTenReducer.class, job);
-
-        job.setOutputKeyClass(IntWritable.class);
-        job.setOutputValueClass(Text.class);
-
-        job.setNumReduceTasks(1);
-
-        FileInputFormat.addInputPath(job, new Path(args[0]));
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
+	<FILL IN>
     }
 }
